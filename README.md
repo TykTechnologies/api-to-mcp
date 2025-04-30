@@ -41,7 +41,7 @@ This tool creates an MCP server that allows AI assistants to interact with APIs 
       "command": "npx",
       "args": [
         "-y",
-        "@tyk-technologies/api-to-mcp",
+        "@tyk-technologies/api-to-mcp@latest",
         "--spec",
         "https://petstore3.swagger.io/api/v3/openapi.json"
       ],
@@ -65,7 +65,7 @@ You can adjust the `args` array to customize your MCP server with various option
       "command": "npx",
       "args": [
         "-y",
-        "@tyk-technologies/api-to-mcp",
+        "@tyk-technologies/api-to-mcp@latest",
         "--spec",
         "./path/to/your/openapi.json",
         "--overlays",
@@ -96,7 +96,7 @@ You can adjust the `args` array to customize your MCP server with various option
       "command": "npx",
       "args": [
         "-y",
-        "@tyk-technologies/api-to-mcp",
+        "@tyk-technologies/api-to-mcp@latest",
         "--spec",
         "./path/to/your/openapi.json"
       ],
