@@ -7,7 +7,7 @@
   "type": "commonjs",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "dev": "nodemon --watch src --ext ts --exec ts-node src/server.ts",
     "lint": "eslint . --ext .ts",
     "test": "jest",
