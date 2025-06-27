@@ -7,6 +7,67 @@ import { isHttpUrl } from './utils/httpClient';
 
 dotenv.config();
 
+// Process command-line arguments first - before any code that uses argv
+const argv = yargs(hideBin(process.argv))
+    .option('config', {
+        alias: 'c',
+        type: 'string',
+        description: 'Path to JSON configuration file'
+    })
+    .option('spec', {
+        alias: 's',
+        type: 'string',
+        description: 'Path to the OpenAPI specification file'
+    })
+    .option('overlays', {
+        alias: 'o',
+        type: 'string', // Comma-separated paths
+        description: 'Comma-separated paths to OpenAPI overlay files'
+    })
+    .option('port', {
+        alias: 'p',
+        type: 'number',
+        description: 'Port for the MCP server'
+    })
+    .option('targetUrl', {
+        alias: 'u',
+        type: 'string',
+        description: 'Target API base URL (overrides OpenAPI servers)'
+    })
+    .option('whitelist', {
+        alias: 'w',
+        type: 'string',
+        description: 'Comma-separated operationIds or URL paths to include (supports glob patterns)'
+    })
+    .option('blacklist', {
+        alias: 'b',
+        type: 'string',
+        description: 'Comma-separated operationIds or URL paths to exclude (supports glob patterns, ignored if whitelist used)'
+    })
+    // Add options for credentials as needed
+    .option('apiKey', {
+        type: 'string',
+        description: 'API Key for the target API'
+    })
+    .option('securitySchemeName', {
+        type: 'string',
+        description: 'Name of the security scheme requiring the API Key'
+    })
+    .option('securityCredentials', {
+        type: 'string',
+        description: 'JSON string containing security credentials for multiple schemes'
+    })
+    .option('headers', {
+        type: 'string',
+        description: 'JSON string containing custom headers to include in all API requests'
+    })
+    .option('disableXMcp', {
+        type: 'boolean',
+        description: 'Disable adding X-MCP: 1 header to all API requests'
+    })
+    .help()
+    .parseSync(); // Use parseSync or handle async parsing
+
 // Parse custom headers from environment variables
 const customHeadersFromEnv: Record<string, string> = {};
 Object.keys(process.env).forEach(key => {
@@ -77,13 +138,20 @@ function getConfigPaths(): string[] {
     }
 }
 
-// Load configuration
+// Load configuration with proper priority handling for --config flag
 let jsonConfig: Record<string, any> = {};
-if (process.env.CONFIG_FILE) {
-    // If CONFIG_FILE env var is set, try to load from that path
+
+// First check if config is specified via CLI option
+if (argv.config) {
+    const configPath = path.resolve(process.cwd(), argv.config);
+    jsonConfig = loadJsonConfig(configPath);
+} 
+// Then check environment variable
+else if (process.env.CONFIG_FILE) {
     jsonConfig = loadJsonConfig(process.env.CONFIG_FILE);
-} else {
-    // Otherwise, try paths based on execution context
+} 
+// Finally fall back to default paths
+else {
     const configPaths = getConfigPaths();
     for (const configPath of configPaths) {
         const config = loadJsonConfig(configPath);
@@ -94,67 +162,6 @@ if (process.env.CONFIG_FILE) {
     }
 }
 
-// Process command-line arguments - don't set defaults here
-// We'll apply the priority order (CLI > ENV > config) after parsing
-const argv = yargs(hideBin(process.argv))
-    .option('config', {
-        alias: 'c',
-        type: 'string',
-        description: 'Path to JSON configuration file'
-    })
-    .option('spec', {
-        alias: 's',
-        type: 'string',
-        description: 'Path to the OpenAPI specification file'
-    })
-    .option('overlays', {
-        alias: 'o',
-        type: 'string', // Comma-separated paths
-        description: 'Comma-separated paths to OpenAPI overlay files'
-    })
-    .option('port', {
-        alias: 'p',
-        type: 'number',
-        description: 'Port for the MCP server'
-    })
-    .option('targetUrl', {
-        alias: 'u',
-        type: 'string',
-        description: 'Target API base URL (overrides OpenAPI servers)'
-    })
-    .option('whitelist', {
-        alias: 'w',
-        type: 'string',
-        description: 'Comma-separated operationIds or URL paths to include (supports glob patterns)'
-    })
-    .option('blacklist', {
-        alias: 'b',
-        type: 'string',
-        description: 'Comma-separated operationIds or URL paths to exclude (supports glob patterns, ignored if whitelist used)'
-    })
-    // Add options for credentials as needed
-    .option('apiKey', {
-        type: 'string',
-        description: 'API Key for the target API'
-    })
-    .option('securitySchemeName', {
-        type: 'string',
-        description: 'Name of the security scheme requiring the API Key'
-    })
-    .option('securityCredentials', {
-        type: 'string',
-        description: 'JSON string containing security credentials for multiple schemes'
-    })
-    .option('headers', {
-        type: 'string',
-        description: 'JSON string containing custom headers to include in all API requests'
-    })
-    .option('disableXMcp', {
-        type: 'boolean',
-        description: 'Disable adding X-MCP: 1 header to all API requests'
-    })
-    .help()
-    .parseSync(); // Use parseSync or handle async parsing
 
 // Apply priority order: CLI arguments > Environment variables > Config file
 const getValueWithPriority = <T>(cliValue: T | undefined, envValue: T | undefined, configValue: T | undefined, defaultValue: T): T => {

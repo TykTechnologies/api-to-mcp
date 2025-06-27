@@ -57,3 +57,4 @@ config.local.json
 *.local.json
 *.local.js
 *.local.ts
+.aider*
